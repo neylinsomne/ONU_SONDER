@@ -1,50 +1,63 @@
 import streamlit as st
 import random
 import time
+import boto3
+import json
+from botocore.exceptions import ClientError
+from config.AWS_Client import create_client
 
-st.set_page_config(
-    page_title="Hello",
-    page_icon="👋",
-)
-
-st.write("# Welcome from thara! 🤖")
+# Establecer las credenciales de AWS de manera programática
+client = create_client("bedrock-runtime")
 
 
+
+# Configurar la página
+st.set_page_config(page_title="Hello", page_icon="👋")
+st.write("# Welcome from AIrepa! 🤖")
 st.sidebar.success("Select a demo above.")
-# Streamed response emulator
-def response_generator():
-    response = random.choice(
-        [
-            "Hello there! How can I assist you today?",
-            "Hi, human! Is there anything I can help you with?",
-            "Do you need help?",
-        ]
-    )
-    for word in response.split():
-        yield word + " "
-        time.sleep(0.05)
 
-
-
-# Initialize chat history
+# Inicializar el estado de la sesión si no está inicializado
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [] 
 
-# Display chat messages from history on app rerun
+
+def call_titan(prompt):
+    model_id = "amazon.titan-text-express-v1" 
+    conversation = [
+        {
+            "role": "user",
+            "content": [{"text": prompt}],
+        }
+    ]
+    try:
+
+        response = client.converse(
+            modelId=model_id,
+            messages=conversation,
+            inferenceConfig={"maxTokens": 512, "temperature": 0.5, "topP": 0.9},
+        )
+        response_text = response["output"]["message"]["content"][0]["text"]
+        return response_text
+    except (ClientError, Exception) as e:
+        print(f"ERROR: Can't invoke '{model_id}'. Reason: {e}")
+        return "Sorry, I couldn't get a response from the model."
+
+
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Accept user input
+# Aceptar la entrada del usuario
 if prompt := st.chat_input("What is up?"):
-    # Add user message to chat history
+
     st.session_state.messages.append({"role": "user", "content": prompt})
-    # Display user message in chat message container
+
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        response = st.write_stream(response_generator())
-    # Add assistant response to chat history
+        response = call_titan(prompt)
+        st.markdown(response)
+
+ 
     st.session_state.messages.append({"role": "assistant", "content": response})
