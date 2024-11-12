@@ -18,36 +18,36 @@ st.write(
 # Crear cliente S3
 s3_client = create_client('s3')
 
-# Función para leer el archivo GeoJSON desde S3 y convertirlo a un DataFrame
+
 def read_geojson_from_s3(s3_client, bucket_name, object_key):
     try:
-        # Obtener el objeto desde S3
+
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
         
-        # Leer el contenido del archivo (en este caso, GeoJSON)
+
         file_content = response['Body'].read().decode('utf-8')
         
-        # Cargar los datos en formato JSON
+
         data = json.loads(file_content)
         
-        # Convertir los datos del GeoJSON en un DataFrame
+
         features = data['features']
         records = []
         
-        # Extraer las propiedades y las coordenadas de cada feature
+  
         for feature in features:
             properties = feature['properties']
             geometry = feature['geometry']
-            record = properties.copy()  # Crear un diccionario con las propiedades
+            record = properties.copy()  
             
-            # Agregar las coordenadas (latitud, longitud) al registro
+
             if geometry['type'] == 'Point':
                 record['latitud'] = geometry['coordinates'][1]
                 record['longitud'] = geometry['coordinates'][0]
             
             records.append(record)
         
-        # Crear un DataFrame de Pandas con los registros extraídos
+
         df = pd.DataFrame(records)
         return df
     
@@ -55,22 +55,21 @@ def read_geojson_from_s3(s3_client, bucket_name, object_key):
         st.error(f"Error al leer el archivo desde S3: {e}")
         return None
 
-# Nombre del bucket y clave del objeto
+
 bucket_name = 'equiporocket'
 object_key = 'pa_brincar/atractivos_turisticos.geojson'
 
-# Llamar a la función para leer el archivo GeoJSON desde S3 y convertirlo en un DataFrame
+
 df = read_geojson_from_s3(s3_client, bucket_name, object_key)
 
-# Si el DataFrame se cargó correctamente, mostrarlo en la aplicación
+
 if df is not None:
     st.write("### Datos de Atractivos Turísticos en Medellín", df)
 
-    # Mostrar una tabla con los primeros registros
+ 
     st.write("### Primeros registros", df.head())
 
 
-    # Crear gráfico de barras para comparar los datos de la columna 'imperdible'
     if 'imperdible' in df.columns:
         imperdible_count = df['imperdible'].value_counts().reset_index()
         imperdible_count.columns = ['Imperdible', 'Cantidad']

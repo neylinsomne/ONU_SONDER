@@ -12,10 +12,10 @@ st.write(
     """Este demo muestra cómo usar `st.pydeck_chart` para visualizar datos geoespaciales."""
 )
 
-# Crear cliente S3
+
 s3_client = create_client('s3')
 
-# Función para leer el archivo GeoJSON desde S3 y convertirlo a un DataFrame
+
 def read_geojson_from_s3(s3_client, bucket_name, object_key):
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
@@ -43,16 +43,15 @@ def read_geojson_from_s3(s3_client, bucket_name, object_key):
         st.error(f"Error al leer el archivo desde S3: {e}")
         return None
 
-# Nombre del bucket y clave del objeto
+
 bucket_name = 'equiporocket'
 object_key = 'pa_brincar/atractivos_turisticos.geojson'
 
-# Leer datos desde S3 y convertirlos en un DataFrame
 df = read_geojson_from_s3(s3_client, bucket_name, object_key)
 
-# Si el DataFrame se cargó correctamente, mostrar el mapa
+
 if df is not None and 'latitud' in df.columns and 'longitud' in df.columns:
-    # Ajuste de la vista inicial del mapa basado en el centroide de los puntos
+
     initial_view_state = pdk.ViewState(
         latitude=df['latitud'].mean(),
         longitude=df['longitud'].mean(),
@@ -60,7 +59,7 @@ if df is not None and 'latitud' in df.columns and 'longitud' in df.columns:
         pitch=50,
     )
 
-    # Crear una capa de Scatterplot para mostrar los atractivos turísticos
+
     tourist_layer = pdk.Layer(
         "ScatterplotLayer",
         data=df,
@@ -71,7 +70,7 @@ if df is not None and 'latitud' in df.columns and 'longitud' in df.columns:
         tooltip=True,
     )
 
-    # Configurar y renderizar el mapa
+
     st.pydeck_chart(
         pdk.Deck(
             map_style="mapbox://styles/mapbox/light-v9",
